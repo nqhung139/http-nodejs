@@ -42,10 +42,6 @@ async function fireStreaming(objSymbols) {
 
     eventEmitter.fire(result);
   }
-
-  return function () {
-    isNext = false;
-  };
 }
 
 app.get("/:symbols", function (req, res) {
@@ -57,7 +53,7 @@ app.get("/:symbols", function (req, res) {
     objSymbols[item] = { symbol, exchange };
   });
 
-  const destroy = fireStreaming(objSymbols);
+  fireStreaming(objSymbols);
 
   const id = Date.now().toString(); // milliseconds of now will be fine for our case
   var timer = null;
@@ -66,7 +62,6 @@ app.get("/:symbols", function (req, res) {
     console.log("event", event);
     res.status(201);
     res.end(JSON.stringify(event));
-    destroy();
   };
 
   eventEmitter.register(id, handler);
@@ -77,7 +72,6 @@ app.get("/:symbols", function (req, res) {
     if (wasUnregistered) {
       res.status(200);
       res.end();
-      destroy();
     }
   }, 5000);
 });
