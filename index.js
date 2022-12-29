@@ -1,4 +1,5 @@
 const express = require("express");
+const { split, forEach, size, sampleSize, random, map } = require("lodash");
 const EventEmitter = require("./event.js");
 const app = express();
 
@@ -19,9 +20,45 @@ async function main() {
   }
 }
 
-main();
+async function fireStreaming(objSymbols) {
+  let isNext = true;
+  const sizeData = size(objSymbols);
 
-app.get("/", function (req, res) {
+  while (isNext) {
+    const waitTimeMS = Math.floor(Math.random() * 10000);
+    await sleep(waitTimeMS);
+
+    const symbolStream = sampleSize(objSymbols, 3);
+
+    const result = map(symbolStream, (item) => ({
+      symbol: item.symbol,
+      exchange: item.exchange,
+      quote: {
+        trade_price: random(10, 300, true),
+        change_point: random(0, 10, true),
+        change_percent: random(0, 1, true),
+      },
+    }));
+
+    eventEmitter.fire(result);
+  }
+
+  return function () {
+    isNext = false;
+  };
+}
+
+app.get("/:symbols", function (req, res) {
+  const strSymbols = req.params.symbols;
+  const arrSymbols = split(strSymbols, ",");
+  const objSymbols = {};
+  forEach(arrSymbols, (item) => {
+    const [symbol, exchange] = split(item, ".");
+    objSymbols[item] = { symbol, exchange };
+  });
+
+  const destroy = fireStreaming(objSymbols);
+
   const id = Date.now().toString(); // milliseconds of now will be fine for our case
   var timer = null;
   const handler = function (event) {
@@ -29,6 +66,7 @@ app.get("/", function (req, res) {
     console.log("event", event);
     res.status(201);
     res.end(JSON.stringify(event));
+    destroy();
   };
 
   eventEmitter.register(id, handler);
@@ -39,6 +77,7 @@ app.get("/", function (req, res) {
     if (wasUnregistered) {
       res.status(200);
       res.end();
+      destroy();
     }
   }, 5000);
 });
