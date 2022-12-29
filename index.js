@@ -10,7 +10,7 @@ async function sleep(ms) {
   }).catch(function () {});
 }
 
-async function fireStreaming(objSymbols) {
+async function fireStreaming(res, objSymbols) {
   let isNext = true;
   const sizeData = size(objSymbols);
 
@@ -49,7 +49,7 @@ app.get("/:symbols", function (req, res) {
     objSymbols[item] = { symbol, exchange };
   });
 
-  fireStreaming(objSymbols);
+  fireStreaming(res, objSymbols);
 });
 
 var server = app.listen(process.env.PORT, function () {
