@@ -27,7 +27,7 @@ async function fireStreaming(res, objSymbols) {
     const waitTimeMS = Math.floor(Math.random() * 1000);
     await sleep(waitTimeMS);
 
-    const symbolStream = take(values(objSymbols), 3);
+    const symbolStream = take(values(objSymbols), 50);
 
     const result = map(symbolStream, (item) => ({
       symbol: item.symbol + "." + item.exchange,
