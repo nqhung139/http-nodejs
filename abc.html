@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script>
+    const key = "check";
+    class Nchan {
+      constructor(props) {
+        // timeout , reconnectTime => timeout check connect
+        // onConnect, onData , onError => handle
+        // timePushBlob => delay push data
+        // url, options => info
+        this.props = props;
+        this.init();
+        this.dataCache = [];
+      }
+
+      init() {
+        const { url, options } = this.props;
+        try {
+          this.evs = new EventSource(url, options);
+        } catch (error) {
+          cw.log("error", error.message);
+        }
+        this.createTimeoutRequest();
+
+        this.evs.addEventListener("open", this.onOpen);
+        this.evs.addEventListener("message", this.onData);
+        this.evs.addEventListener("error", this.onError);
+      }
+
+      createTimeoutRequest() {
+        const { timeout = 10000 } = this.props;
+        if (timeout) {
+          this.timeoutTimer = setTimeout(() => {
+            this.onError("timeout");
+          }, timeout);
+        }
+      }
+
+      onOpen = this.onOpen.bind(this);
+      onOpen() {
+        const { timePushBlob, onConnect, onData } = this.props;
+        onConnect && onConnect();
+
+        this.timeoutTimer && clearTimeout(this.timeoutTimer); // without timout check
+        this.timeoutTimer = null;
+
+        this.reconnectTimer && clearInterval(this.reconnectTimer);
+        this.reconnectTimer = null;
+
+        if (timePushBlob && !this.blodTimer) {
+          this.blodTimer = setInterval(() => {
+            !!this.dataCache[0] && onData && onData(this.dataCache);
+            this.dataCache = [];
+          }, timePushBlob);
+        }
+      }
+
+      onData = this.onData.bind(this);
+      onData(res) {
+        const { data, type } = res || {};
+
+        // without ping
+        if (type === "ping" || data.includes("ping")) {
+          return;
+        }
+
+        let objData = null;
+        try {
+          objData = JSON.parse(data);
+        } catch (error) {
+          objData = data;
+        }
+
+        const { onData, timePushBlob } = this.props;
+        if (objData) {
+          if (!timePushBlob) {
+            onData && onData(objData);
+          } else {
+            this.dataCache.push(objData);
+          }
+        }
+      }
+
+      onError = this.onError.bind(this);
+      onError(err) {
+        const { onError, reconnectTime = 1000 } = this.props;
+        onError && onError(err);
+        this.close();
+
+        if (reconnectTime) {
+          this.reconnectTimer && clearInterval(this.reconnectTimer);
+          this.reconnectTimer = setInterval(this.init, reconnectTime);
+        }
+      }
+
+      close = this.close.bind(this);
+      close() {
+        const { onClose } = this.props;
+        this.evs && this.evs.close && this.evs.close();
+        this.evs = null;
+
+        onClose && onClose();
+      }
+    }
+    new Nchan({
+      url: "http://localhost:8080/332.XHKG,331.XHKG,33.XHKG,303.XHKG,301.XHKG,30.XHKG,AL.XTSX,AL.XNYS,AI.XTSE,AF.XPAR",
+      onConnect: (p) => {
+        console.log("onConnect." + key, p);
+      },
+      onData: (p) => {
+        console.log("onData." + key, p);
+      },
+      onError: (p) => {
+        console.log("onError." + key, p);
+      },
+      onClose: (p) => {
+        console.log("onClose." + key, p);
+      },
+    });
+  </script>
+</html>
