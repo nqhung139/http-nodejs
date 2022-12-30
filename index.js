@@ -24,7 +24,7 @@ async function fireStreaming(res, objSymbols) {
   const sizeData = size(objSymbols);
 
   while (isNext) {
-    const waitTimeMS = Math.floor(Math.random() * 1000);
+    const waitTimeMS = 300;
     await sleep(waitTimeMS);
 
     const symbolStream = take(values(objSymbols), 50);
