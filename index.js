@@ -24,10 +24,10 @@ async function fireStreaming(res, objSymbols) {
   const sizeData = size(objSymbols);
 
   while (isNext) {
-    const waitTimeMS = 300;
+    const waitTimeMS = 1000;
     await sleep(waitTimeMS);
 
-    const symbolStream = take(values(objSymbols), 50);
+    const symbolStream = take(values(objSymbols), 20);
 
     const result = map(symbolStream, (item) => ({
       symbol: item.symbol + "." + item.exchange,
@@ -67,8 +67,8 @@ app.get("/:symbols", function (req, res) {
   fireStreaming(res, objSymbols);
 });
 
-var server = app.listen(process.env.PORT, function () {
-  // var server = app.listen(8080, function () {
+// var server = app.listen(process.env.PORT, function () {
+var server = app.listen(8080, function () {
   var host = server.address().address;
   var port = server.address().port;
   console.log("Example app listening at http://%s:%s", host, port);
