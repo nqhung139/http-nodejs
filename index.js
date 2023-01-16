@@ -8,6 +8,7 @@ const {
   map,
   take,
   values,
+  sample,
 } = require("lodash");
 const app = express();
 
@@ -24,10 +25,10 @@ async function fireStreaming(res, objSymbols) {
   const sizeData = size(objSymbols);
 
   while (isNext) {
-    const waitTimeMS = 300;
+    const waitTimeMS = 1000;
     await sleep(waitTimeMS);
 
-    const symbolStream = take(values(objSymbols), 200);
+    const symbolStream = sample(values(objSymbols), 20);
 
     const result = map(symbolStream, (item) => ({
       symbol: item.symbol + "." + item.exchange,
